@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "functions": {
+    "api/clusters.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
