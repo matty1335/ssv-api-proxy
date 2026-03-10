@@ -28,8 +28,8 @@ export default async function handler(req, res) {
             // Get total effective balance
             ssvApiUrl = `https://api.ssv.network/api/v4/${net}/accounts/${owner.toLowerCase()}/totalEffectiveBalance`;
         } else {
-            // Get clusters (default)
-            ssvApiUrl = `https://api.ssv.network/api/v4/${net}/clusters?owner=${owner.toLowerCase()}`;
+            // Get clusters by owner (correct endpoint)
+            ssvApiUrl = `https://api.ssv.network/api/v4/${net}/clusters/owner/${owner.toLowerCase()}`;
         }
         
         console.log('Fetching from:', ssvApiUrl);
