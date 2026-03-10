@@ -10,7 +10,33 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { owner, network, type } = req.query;
+        // Extract from path: /api/clusters/[network]/[type]/[owner]
+        const pathParts = req.url.split('/').filter(p => p && p !== 'api' && p !== 'clusters');
+        
+        let network = 'mainnet';
+        let type = 'clusters'; // default
+        let owner = null;
+
+        // Parse path segments
+        if (pathParts.length >= 2) {
+            network = pathParts[0];
+            owner = pathParts[1];
+        }
+        if (pathParts.length >= 3) {
+            type = pathParts[1];
+            owner = pathParts[2];
+        }
+
+        // Also check query parameters as fallback
+        const queryOwner = req.query?.owner;
+        const queryNetwork = req.query?.network || 'mainnet';
+        const queryType = req.query?.type || 'clusters';
+
+        if (queryOwner) {
+            owner = queryOwner;
+            network = queryNetwork;
+            type = queryType;
+        }
 
         if (!owner) {
             return res.status(400).json({ error: 'Missing owner parameter' });
@@ -20,16 +46,14 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid address format' });
         }
 
-        const net = network || 'mainnet';
         let ssvApiUrl;
 
-        // Route based on type parameter
         if (type === 'balance') {
             // Get total effective balance
-            ssvApiUrl = `https://api.ssv.network/api/v4/${net}/accounts/${owner.toLowerCase()}/totalEffectiveBalance`;
+            ssvApiUrl = `https://api.ssv.network/api/v4/${network}/accounts/${owner.toLowerCase()}/totalEffectiveBalance`;
         } else {
-            // Get clusters by owner (correct endpoint)
-            ssvApiUrl = `https://api.ssv.network/api/v4/${net}/clusters/owner/${owner.toLowerCase()}`;
+            // Get clusters by owner
+            ssvApiUrl = `https://api.ssv.network/api/v4/${network}/clusters/owner/${owner.toLowerCase()}`;
         }
         
         console.log('Fetching from:', ssvApiUrl);
