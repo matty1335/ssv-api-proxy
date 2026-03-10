@@ -856,26 +856,6 @@
             }
 
             // Check if proxy is configured
-            if (VERCEL_PROXY_URL === 'YOUR_VERCEL_URL') {
-                statusDiv.innerHTML = `
-                    <div style="color: #fbbf24;">
-                        <strong>⚠️ Proxy Not Configured</strong><br>
-                        <small><strong>Quick Setup on Vercel (5 minutes):</strong></small><br>
-                        <small style="color: #94a3b8; display: block; margin-top: 6px;">1. Go to: <strong>https://github.com/new</strong></small>
-                        <small style="color: #94a3b8; display: block;">2. Create new repository: ssv-api-proxy</small>
-                        <small style="color: #94a3b8; display: block;">3. Add <strong>vercel-api-clusters.js</strong> as api/clusters.js</small>
-                        <small style="color: #94a3b8; display: block;">4. Add <strong>vercel.json</strong> and <strong>package.json</strong></small>
-                        <small style="color: #94a3b8; display: block;">5. Push to GitHub</small>
-                        <small style="color: #94a3b8; display: block;">6. Go to: <strong>https://vercel.com</strong> and import GitHub repo</small>
-                        <small style="color: #94a3b8; display: block;">7. Get your Vercel URL (e.g., https://ssv-api-proxy-xxxxx.vercel.app)</small>
-                        <small style="color: #94a3b8; display: block;">8. Update VERCEL_PROXY_URL in calculator code</small>
-                        <small style="color: #94a3b8; display: block;">9. Reload page</small>
-                        <small style="color: #b4b4b4; display: block; margin-top: 8px; font-style: italic;">See VERCEL-DEPLOYMENT-GUIDE.md for full instructions</small>
-                    </div>
-                `;
-                statusDiv.style.color = '#fbbf24';
-                return;
-            }
 
             statusDiv.textContent = '⏳ Fetching clusters...';
             statusDiv.style.color = '#93c5fd';
