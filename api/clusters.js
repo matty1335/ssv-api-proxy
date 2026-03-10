@@ -1,15 +1,9 @@
-/**
- * Vercel Serverless Function - SSV API Proxy
- * File: api/clusters.js
- */
-
 export default async function handler(req, res) {
     // Enable CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
         res.status(200).end();
         return;
@@ -18,18 +12,17 @@ export default async function handler(req, res) {
     try {
         const { owner } = req.query;
 
-        // Validate owner parameter exists
         if (!owner) {
             return res.status(400).json({ error: 'Missing owner parameter' });
         }
 
-        // Validate address format (0x followed by 40 hex characters)
         if (!/^0x[a-fA-F0-9]{40}$/.test(owner)) {
-            return res.status(400).json({ error: 'Invalid address format. Use 0x... format' });
+            return res.status(400).json({ error: 'Invalid address format' });
         }
 
-        // Fetch from SSV API
+        // Try the SSV API
         const ssvApiUrl = `https://api.ssv.network/api/v4/clusters?owner=${owner.toLowerCase()}`;
+        console.log('Fetching from:', ssvApiUrl);
         
         const response = await fetch(ssvApiUrl, {
             method: 'GET',
@@ -38,13 +31,17 @@ export default async function handler(req, res) {
             }
         });
 
+        const data = await response.json();
+        console.log('SSV API Response:', data);
+
         if (!response.ok) {
-            throw new Error(`SSV API error: ${response.statusText}`);
+            return res.status(response.status).json({ 
+                error: 'SSV API error',
+                details: data,
+                url: ssvApiUrl
+            });
         }
 
-        const data = await response.json();
-
-        // Return the data with CORS headers
         return res.status(200).json(data);
 
     } catch (error) {

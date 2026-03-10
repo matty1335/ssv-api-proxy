@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSV Cluster ETH Migration Estimator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: #0a0e27;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 12px;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 6px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: #1a1f3a;
+            border: 1px solid #2a3a5a;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-size: 15px;
+            margin-bottom: 14px;
+            color: #e2e8f0;
+            border-bottom: 1px solid #2a3a5a;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .label-text {
+            color: #cbd5e1;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .badge {
+            font-size: 9px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input, select {
+            width: 100%;
+            background-color: #2a3a5a;
+            border: 1px solid #3a4a7a;
+            border-radius: 6px;
+            padding: 8px 10px;
+            color: #ffffff;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        input::placeholder, select {
+            color: #64748b;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .input-suffix {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-weight: 600;
+            pointer-events: none;
+            font-size: 12px;
+        }
+
+        .separator {
+            height: 1px;
+            background-color: #2a3a5a;
+            margin: 12px 0;
+        }
+
+        .info-text {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 3px;
+            line-height: 1.3;
+        }
+
+        .results-section {
+            grid-column: 1 / -1;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .result-item {
+            background-color: #151a30;
+            border: 1px solid #2a3a5a;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 9px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .result-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 3px;
+        }
+
+        .result-unit {
+            font-size: 9px;
+            color: #64748b;
+        }
+
+        .breakdown-section {
+            background-color: #151a30;
+            border: 1px solid #2a3a5a;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 14px;
+        }
+
+        .breakdown-title {
+            font-size: 12px;
+            color: #e2e8f0;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #2a3a5a;
+            font-size: 11px;
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-label {
+            color: #94a3b8;
+        }
+
+        .breakdown-value {
+            color: #e2e8f0;
+            font-weight: 600;
+            font-family: 'Monaco', monospace;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-top: 1px solid #3a4a7a;
+            margin-top: 6px;
+            font-size: 12px;
+        }
+
+        .total-label {
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .total-value {
+            color: #60a5fa;
+            font-weight: bold;
+            font-family: 'Monaco', monospace;
+            font-size: 14px;
+        }
+
+        .warning {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #fca5a5;
+            display: none;
+        }
+
+        .warning.show {
+            display: block;
+        }
+
+        .success {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #86efac;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .buttons {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            border: 1px solid #3a4a7a;
+            background-color: #2a3a5a;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background-color: #3a4a7a;
+            border-color: #4a5a8a;
+        }
+
+        .btn-fetch {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            border: 1px solid #3b82f6;
+            background-color: #3b82f6;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .btn-fetch:hover {
+            background-color: #2563eb;
+            border-color: #1d4ed8;
+        }
+
+        .btn-fetch:disabled {
+            background-color: #64748b;
+            border-color: #475569;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        textarea {
+            width: 100%;
+            background-color: #2a3a5a;
+            border: 1px solid #3a4a7a;
+            border-radius: 6px;
+            padding: 8px 10px;
+            color: #ffffff;
+            font-size: 12px;
+            resize: vertical;
+            transition: all 0.2s;
+        }
+
+        textarea::placeholder {
+            color: #64748b;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .cluster-result-item {
+            background-color: #151a30;
+            border: 1px solid #2a3a5a;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cluster-result-item:hover {
+            border-color: #3b82f6;
+            background-color: #1a1f3a;
+        }
+
+        .cluster-result-item.selected {
+            border-color: #3b82f6;
+            background-color: #1a2540;
+        }
+
+        .cluster-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .cluster-result-title {
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 12px;
+        }
+
+        .cluster-result-status {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        .cluster-result-details {
+            font-size: 10px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2a3a5a;
+        }
+
+        .tab-button {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-button.active {
+            color: #60a5fa;
+            border-bottom-color: #60a5fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-section {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .info-card {
+            background-color: #1a1f3a;
+            border: 1px solid #2a3a5a;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .info-card h3 {
+            font-size: 12px;
+            color: #e2e8f0;
+            margin-bottom: 6px;
+        }
+
+        .info-card p {
+            font-size: 11px;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+
+        .formula {
+            background-color: #151a30;
+            border-left: 2px solid #3b82f6;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', monospace;
+            font-size: 9px;
+            color: #cbd5e1;
+            margin-top: 6px;
+            overflow-x: auto;
+        }
+            border-radius: 4px;
+            font-family: 'Monaco', monospace;
+            font-size: 10px;
+            color: #cbd5e1;
+            margin-top: 6px;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="margin-bottom: 16px; font-size: 28px; font-weight: 900; letter-spacing: -1px; color: #3B82F6;">
+                SSV
+            </div>
+            <h1>SSV ETH Migration Estimator</h1>
+            <p class="header-subtitle">Calculate ETH required for cluster migration from SSV payments</p>
+        </div>
+
+        <div class="grid">
+            <!-- Cluster Information -->
+            <div class="card">
+                <h2>📋 Cluster Information</h2>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Owner Addresses (Optional)</span>
+                        <span class="badge">Multi</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <textarea id="ownerAddresses" placeholder="0x... (one per line)" style="height: 80px; font-family: monospace; font-size: 12px;"></textarea>
+                    </div>
+                    <div class="info-text">Enter multiple owner addresses (one per line). Note: API fetching may fail due to CORS restrictions - you can use the calculator with manual entry below</div>
+                </div>
+
+                <button class="btn-fetch" onclick="fetchAllClusters()">Fetch All Clusters</button>
+
+                <div id="fetchStatus" style="margin-top: 12px; font-size: 11px; color: #64748b;"></div>
+
+                <div id="clusterResultsContainer" style="display: none; margin-top: 16px;">
+                    <div class="form-label">
+                        <span class="label-text">Cluster Results</span>
+                    </div>
+                    <div id="clusterResults" style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+
+                <div class="separator"></div>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Or Enter Manual Data</span>
+                        <span class="badge">Manual</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Number of Validators</span>
+                        <span class="badge">Count</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="validatorCount" min="1" value="1" step="1">
+                    </div>
+                    <div class="info-text">Total validators in your cluster</div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Total Effective Balance</span>
+                        <span class="badge">ETH</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="effectiveBalance" min="0" value="32" step="0.01">
+                        <span class="input-suffix">ETH</span>
+                    </div>
+                    <div class="info-text">Sum of all validator effective balances. Defaults to 32 ETH per validator if unknown</div>
+                </div>
+
+                <div class="separator"></div>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Operator Count</span>
+                        <span class="badge">DVT</span>
+                    </div>
+                    <select id="operatorCount">
+                        <option value="4">4 Operators (3f+1 compatible)</option>
+                        <option value="7">7 Operators</option>
+                        <option value="10">10 Operators</option>
+                        <option value="13">13 Operators</option>
+                    </select>
+                </div>
+
+                <div id="operatorFeesContainer"></div>
+            </div>
+
+            <!-- Migration Parameters -->
+            <div class="card">
+                <h2>⚙️ Migration Parameters</h2>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Desired Runway Period</span>
+                        <span class="badge">Duration</span>
+                    </div>
+                    <select id="runwayPeriod">
+                        <option value="30">1 Month (30 days)</option>
+                        <option value="70">70 Days</option>
+                        <option value="90">3 Months (90 days)</option>
+                        <option value="180">6 Months (180 days)</option>
+                        <option value="365">1 Year (365 days)</option>
+                        <option value="730">2 Years (730 days)</option>
+                        <option value="custom">Custom Days</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="customRunwayGroup" style="display: none;">
+                    <div class="form-label">
+                        <span class="label-text">Custom Runway Period</span>
+                        <span class="badge">Days</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="customRunway" min="1" value="30" step="1">
+                        <span class="input-suffix">days</span>
+                    </div>
+                </div>
+
+                <div class="separator"></div>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Network Fee Per Validator</span>
+                        <span class="badge">DAO</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="networkFeePerValidator" min="0" value="0.00928" step="0.00001">
+                        <span class="input-suffix">ETH/year</span>
+                    </div>
+                    <div class="info-text">Network fee per validator per year (1% of ETH value)</div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">ETH Staking APR</span>
+                        <span class="badge">%</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="ethAPR" min="0" value="2.9" step="0.1">
+                        <span class="input-suffix">%</span>
+                    </div>
+                    <div class="info-text">Current ETH staking APR for reference and calculations</div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Blocks Per Day</span>
+                        <span class="badge">Ethereum</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="blocksPerDay" min="1" value="7200" step="1">
+                        <span class="input-suffix">blocks</span>
+                    </div>
+                    <div class="info-text">Ethereum produces ~7,200 blocks per day (12s per block)</div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-label">
+                        <span class="label-text">Liquidation Threshold Period (LTP)</span>
+                        <span class="badge">Blocks</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="ltp" min="1" value="50400" step="1">
+                        <span class="input-suffix">blocks</span>
+                    </div>
+                    <div class="info-text">LTP in blocks = <span id="ltpDaysDisplay">7.00</span> days (LTP ÷ Blocks Per Day)</div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="card results-section">
+                <h2>💰 Migration Estimation</h2>
+
+                <div class="tabs">
+                    <button class="tab-button active" onclick="switchTab('summary')">Summary</button>
+                    <button class="tab-button" onclick="switchTab('breakdown')">Fee Breakdown</button>
+                    <button class="tab-button" onclick="switchTab('recommendations')">Recommendations</button>
+                </div>
+
+                <!-- Summary Tab -->
+                <div id="summary" class="tab-content active">
+                    <div class="warning" id="warningBox"></div>
+                    <div class="success" id="successBox"></div>
+
+                    <div class="results-grid">
+                        <div class="result-item">
+                            <div class="result-label">Annual Operator Fees</div>
+                            <div class="result-value" id="annualOperatorFees">0</div>
+                            <div class="result-unit">ETH</div>
+                        </div>
+
+                        <div class="result-item">
+                            <div class="result-label">Annual Network Fees</div>
+                            <div class="result-value" id="annualNetworkFees">0</div>
+                            <div class="result-unit">ETH</div>
+                        </div>
+
+                        <div class="result-item">
+                            <div class="result-label">Daily Burn Rate</div>
+                            <div class="result-value" id="dailyBurnRate">0</div>
+                            <div class="result-unit">ETH/day</div>
+                        </div>
+
+                        <div class="result-item">
+                            <div class="result-label">Liquidation Safety Buffer</div>
+                            <div class="result-value" id="currentRunway">0</div>
+                            <div class="result-unit">days</div>
+                        </div>
+                    </div>
+
+                    <div class="breakdown-section">
+                        <div class="breakdown-title">ETH Required for Migration</div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Operator Fees (Runway Period)</span>
+                            <span class="breakdown-value" id="operatorFeesForPeriod">0 ETH</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Network Fees (Runway Period)</span>
+                            <span class="breakdown-value" id="networkFeesForPeriod">0 ETH</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Liquidation Collateral</span>
+                            <span class="breakdown-value" id="collateralRequired">0 ETH</span>
+                        </div>
+                        <div class="total-row">
+                            <span class="total-label">💾 Total ETH to Deposit</span>
+                            <span class="total-value" id="totalETHRequired">0 ETH</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown-section">
+                        <div class="breakdown-title">Post-Migration Status</div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Cluster Balance</span>
+                            <span class="breakdown-value" id="postMigrationBalance">0 ETH</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Effective Balance</span>
+                            <span class="breakdown-value" id="postMigrationEB">0 ETH</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Runway After Migration</span>
+                            <span class="breakdown-value" id="postMigrationRunway">0 days</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breakdown Tab -->
+                <div id="breakdown" class="tab-content">
+                    <div class="breakdown-section">
+                        <div class="breakdown-title">Operator Fees Breakdown</div>
+                        <div id="operatorBreakdown"></div>
+                    </div>
+
+                    <div class="breakdown-section">
+                        <div class="breakdown-title">Runway Calculation</div>
+                        <div id="runwayBreakdown"></div>
+                    </div>
+                </div>
+
+                <!-- Recommendations Tab -->
+                <div id="recommendations" class="tab-content">
+                    <div class="breakdown-section">
+                        <div class="breakdown-title">Migration Checklist</div>
+                        <div id="checklist"></div>
+                    </div>
+
+                    <div class="breakdown-section">
+                        <div class="breakdown-title">Important Notes</div>
+                        <div id="importantNotes"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="buttons">
+                <button class="btn" onclick="calculateMigration()">Calculate Migration</button>
+                <button class="btn" onclick="resetForm()">Reset</button>
+                <button class="btn" onclick="exportResults()">Export Results</button>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-card">
+                <h3>📊 ETH vs SSV Payments</h3>
+                <p>The transition to ETH-denominated payments aligns validator rewards with operational costs. Clusters now fund operations directly in ETH, making runway calculations more predictable.</p>
+                <div class="formula">Network Fee = Validators × 0.00928 ETH/year<br>Total Fees = (Operator Fees + Network Fees) / 365 days</div>
+            </div>
+
+            <div class="info-card">
+                <h3>🎯 Effective Balance (EB) Accounting</h3>
+                <p>Fees scale with actual validator effective balances, not just validator count. Post-Pectra validators can secure more than 32 ETH, increasing fee accrual accordingly.</p>
+                <div class="formula">Annual Fees = (Operators Fee per Validator) × Validators + (Network Fee per Validator) × Validators</div>
+            </div>
+
+            <div class="info-card">
+                <h3>⚡ Liquidation Parameters for ETH Clusters</h3>
+                <p><strong>Network Fee:</strong> 1% (~0.00928 ETH) | <strong>Liquidation Threshold:</strong> ~7 days (~16,000 blocks) | <strong>Blocks Per Day:</strong> ~7,200</p>
+                <p style="margin-top: 8px;">Liquidation Collateral is calculated using the block-based formula:</p>
+                <div class="formula">Liquidation Collateral = (Annual Fees / Blocks Per Year) × LTP<br>where LTP = Liquidation Threshold Period in blocks</div>
+                <p style="margin-top: 8px;">ETH clusters have more capital-efficient liquidation parameters compared to SSV clusters due to all aspects being denominated in ETH.</p>
+            </div>
+
+            <div class="info-card">
+                <h3>📋 Pre-Migration Requirements</h3>
+                <p>Before migration, ensure sufficient runway funding. Existing SSV clusters cannot be modified (no validator additions, no runway extensions) until migrated. Migration is one-way and irreversible.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const validatorCountInput = document.getElementById('validatorCount');
+        const effectiveBalanceInput = document.getElementById('effectiveBalance');
+        const operatorCountSelect = document.getElementById('operatorCount');
+        const runwayPeriodSelect = document.getElementById('runwayPeriod');
+        const customRunwayInput = document.getElementById('customRunway');
+        const networkFeeInput = document.getElementById('networkFeePerValidator');
+        const ethAPRInput = document.getElementById('ethAPR');
+        const blocksPerDayInput = document.getElementById('blocksPerDay');
+        const ltpInput = document.getElementById('ltp');
+        const operatorFeesContainer = document.getElementById('operatorFeesContainer');
+        const customRunwayGroup = document.getElementById('customRunwayGroup');
+
+        let operatorFees = [0, 0, 0, 0];
+
+        // SSV API v4 with Vercel Proxy
+        // CONFIGURE YOUR VERCEL PROXY URL BELOW
+        // Step 1: Deploy to Vercel (see VERCEL-DEPLOYMENT-GUIDE.md)
+        // Step 2: Copy vercel-api-clusters.js to api/clusters.js in your repo
+        // Step 3: Push to GitHub (Vercel auto-deploys)
+        // Step 4: Get your Vercel URL (e.g., https://ssv-api-proxy-xxxxx.vercel.app)
+        // Step 5: Replace 'YOUR_VERCEL_URL' below with your actual Vercel URL
+        const VERCEL_PROXY_URL = 'https://ssv-api-proxy.vercel.app/api/clusters'; // e.g., 'https://ssv-api-proxy-xxxxx.vercel.app/api/clusters'
+        
+        let allFetchedClusters = [];
+
+        async function fetchAllClusters() {
+            const ownerAddressesText = document.getElementById('ownerAddresses').value.trim();
+            const statusDiv = document.getElementById('fetchStatus');
+            const resultsContainer = document.getElementById('clusterResultsContainer');
+            const resultsDiv = document.getElementById('clusterResults');
+            
+            if (!ownerAddressesText) {
+                statusDiv.textContent = '❌ Please enter at least one owner address';
+                statusDiv.style.color = '#fca5a5';
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            // Check if proxy is configured
+            if (VERCEL_PROXY_URL === 'YOUR_VERCEL_URL') {
+                statusDiv.innerHTML = `
+                    <div style="color: #fbbf24;">
+                        <strong>⚠️ Proxy Not Configured</strong><br>
+                        <small><strong>Quick Setup on Vercel (5 minutes):</strong></small><br>
+                        <small style="color: #94a3b8; display: block; margin-top: 6px;">1. Go to: <strong>https://github.com/new</strong></small>
+                        <small style="color: #94a3b8; display: block;">2. Create new repository: ssv-api-proxy</small>
+                        <small style="color: #94a3b8; display: block;">3. Add <strong>vercel-api-clusters.js</strong> as api/clusters.js</small>
+                        <small style="color: #94a3b8; display: block;">4. Add <strong>vercel.json</strong> and <strong>package.json</strong></small>
+                        <small style="color: #94a3b8; display: block;">5. Push to GitHub</small>
+                        <small style="color: #94a3b8; display: block;">6. Go to: <strong>https://vercel.com</strong> and import GitHub repo</small>
+                        <small style="color: #94a3b8; display: block;">7. Get your Vercel URL (e.g., https://ssv-api-proxy-xxxxx.vercel.app)</small>
+                        <small style="color: #94a3b8; display: block;">8. Update VERCEL_PROXY_URL in calculator code</small>
+                        <small style="color: #94a3b8; display: block;">9. Reload page</small>
+                        <small style="color: #b4b4b4; display: block; margin-top: 8px; font-style: italic;">See VERCEL-DEPLOYMENT-GUIDE.md for full instructions</small>
+                    </div>
+                `;
+                statusDiv.style.color = '#fbbf24';
+                return;
+            }
+
+            statusDiv.textContent = '⏳ Fetching clusters...';
+            statusDiv.style.color = '#93c5fd';
+            resultsDiv.innerHTML = '';
+            resultsContainer.style.display = 'none';
+            
+            try {
+                const addresses = ownerAddressesText.split('\n')
+                    .map(addr => addr.trim())
+                    .filter(addr => addr.length > 0);
+
+                if (addresses.length === 0) {
+                    statusDiv.textContent = '❌ No valid addresses entered';
+                    statusDiv.style.color = '#fca5a5';
+                    return;
+                }
+
+                // Validate all addresses
+                for (const addr of addresses) {
+                    const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(addr);
+                    if (!isValidAddress) {
+                        statusDiv.innerHTML = `❌ Invalid address format: ${addr}<br><small style="color: #94a3b8;">Use 0x... format</small>`;
+                        statusDiv.style.color = '#fca5a5';
+                        return;
+                    }
+                }
+
+                // Fetch clusters using Replit proxy
+                allFetchedClusters = [];
+                let totalClusters = 0;
+                let successCount = 0;
+                let failureCount = 0;
+
+                for (const address of addresses) {
+                    let clustersFetched = false;
+
+                    try {
+                        const proxyUrl = `${VERCEL_PROXY_URL}?owner=${address.toLowerCase()}`;
+                        
+                        const response = await fetch(proxyUrl, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            const clusters = data.clusters || data.data || [];
+
+                            if (clusters.length > 0) {
+                                successCount++;
+                                totalClusters += clusters.length;
+                                clustersFetched = true;
+                                
+                                clusters.forEach(cluster => {
+                                    cluster.ownerAddress = address;
+                                    allFetchedClusters.push(cluster);
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.log(`Failed to fetch for ${address}: ${error.message}`);
+                    }
+
+                    if (!clustersFetched) {
+                        failureCount++;
+                    }
+                }
+
+                if (allFetchedClusters.length === 0) {
+                    statusDiv.innerHTML = `⚠️ No clusters found across ${addresses.length} address(es)<br><small style="color: #94a3b8;">Please check addresses and try again</small>`;
+                    statusDiv.style.color = '#fbbf24';
+                    return;
+                }
+
+                // Display results
+                displayClusterResults(allFetchedClusters);
+                
+                statusDiv.innerHTML = `
+                    <div style="color: #86efac;">
+                        ✓ Found <strong>${totalClusters}</strong> cluster(s) across <strong>${successCount}</strong> address(es)
+                        ${failureCount > 0 ? `<br><small style="color: #fbbf24;">Could not fetch from ${failureCount} address(es)</small>` : ''}
+                    </div>
+                `;
+                statusDiv.style.color = '#86efac';
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                statusDiv.innerHTML = `
+                    <div style="color: #fca5a5;">
+                        <strong>❌ Error fetching clusters</strong><br>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+                statusDiv.style.color = '#fca5a5';
+            }
+        }
+
+        function displayClusterResults(clusters) {
+            const resultsDiv = document.getElementById('clusterResults');
+            const resultsContainer = document.getElementById('clusterResultsContainer');
+            
+            resultsDiv.innerHTML = clusters.map((cluster, index) => {
+                const validatorCount = cluster.validator_count || cluster.validators_count || 0;
+                const balance = cluster.balance ? (parseFloat(cluster.balance) / 1e18).toFixed(4) : '0';
+                
+                return `
+                    <div class="cluster-result-item" onclick="selectClusterResult(${index})">
+                        <div class="cluster-result-header">
+                            <span class="cluster-result-title">
+                                Cluster ${cluster.cluster_id}
+                                <span style="color: #64748b; font-weight: normal;"> • Owner: ${cluster.ownerAddress.slice(0, 6)}...${cluster.ownerAddress.slice(-4)}</span>
+                            </span>
+                            <span class="cluster-result-status">
+                                ${validatorCount} validators
+                            </span>
+                        </div>
+                        <div class="cluster-result-details">
+                            <div>Balance: ${balance} SSV</div>
+                            <div>Validators: ${validatorCount}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            resultsContainer.style.display = 'block';
+        }
+
+        function selectClusterResult(index) {
+            const cluster = allFetchedClusters[index];
+            if (!cluster) return;
+
+            // Load cluster data into form
+            const validatorCount = cluster.validator_count || cluster.validators_count || 1;
+            document.getElementById('validatorCount').value = validatorCount;
+            
+            // Set effective balance to 32 ETH per validator (default assumption)
+            const effectiveBalance = validatorCount * 32;
+            document.getElementById('effectiveBalance').value = effectiveBalance;
+
+            // Update UI to show selected cluster
+            document.querySelectorAll('.cluster-result-item').forEach((el, i) => {
+                if (i === index) {
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
+
+            // Trigger calculation
+            calculateMigration();
+            
+            // Scroll to results
+            document.querySelector('.results-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Initialize
+        function init() {
+            generateOperatorInputs();
+            runwayPeriodSelect.addEventListener('change', function() {
+                customRunwayGroup.style.display = this.value === 'custom' ? 'block' : 'none';
+                calculateMigration();
+            });
+            setupEventListeners();
+            calculateMigration();
+        }
+
+        function setupEventListeners() {
+            validatorCountInput.addEventListener('input', calculateMigration);
+            effectiveBalanceInput.addEventListener('input', calculateMigration);
+            networkFeeInput.addEventListener('input', calculateMigration);
+            ethAPRInput.addEventListener('input', calculateMigration);
+            blocksPerDayInput.addEventListener('input', calculateMigration);
+            ltpInput.addEventListener('input', calculateMigration);
+            customRunwayInput.addEventListener('input', calculateMigration);
+            operatorCountSelect.addEventListener('change', function() {
+                generateOperatorInputs();
+                calculateMigration();
+            });
+        }
+
+        function generateOperatorInputs() {
+            const count = parseInt(operatorCountSelect.value);
+            operatorFeesContainer.innerHTML = '';
+            operatorFees = new Array(count).fill(0);
+
+            for (let i = 0; i < count; i++) {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `
+                    <div class="form-label">
+                        <span class="label-text">Operator ${i + 1} Fee</span>
+                        <span class="badge">ETH/year</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" data-operator="${i}" min="0" value="0" step="0.00001" class="operator-fee-input">
+                        <span class="input-suffix">ETH/year</span>
+                    </div>
+                `;
+                operatorFeesContainer.appendChild(div);
+            }
+
+            document.querySelectorAll('.operator-fee-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.dataset.operator);
+                    operatorFees[idx] = parseFloat(e.target.value) || 0;
+                    calculateMigration();
+                });
+            });
+        }
+
+        function calculateMigration() {
+            const validatorCount = parseInt(validatorCountInput.value) || 1;
+            const effectiveBalance = parseFloat(effectiveBalanceInput.value) || 32;
+            const networkFeePerValidator = parseFloat(networkFeeInput.value) || 0.00928;
+            const blocksPerDay = parseInt(blocksPerDayInput.value) || 7200;
+            const ltp = parseInt(ltpInput.value) || 16000;
+            const runwayPeriod = runwayPeriodSelect.value === 'custom' ? 
+                parseInt(customRunwayInput.value) || 30 : parseInt(runwayPeriodSelect.value);
+
+            // Calculate annual fees
+            const totalOperatorFeesPerYear = operatorFees.reduce((a, b) => a + b, 0) * validatorCount;
+            const totalNetworkFeesPerYear = networkFeePerValidator * validatorCount;
+            const totalAnnualFees = totalOperatorFeesPerYear + totalNetworkFeesPerYear;
+
+            // Daily burn rate
+            const dailyBurnRate = totalAnnualFees / 365;
+
+            // Fee per block (annual fees / blocks per year)
+            const blocksPerYear = blocksPerDay * 365;
+            const feePerBlock = totalAnnualFees / blocksPerYear;
+
+            // Liquidation collateral based on LTP (Liquidation Threshold Period)
+            // Liquidation Collateral = (Fee per Block) × LTP (in blocks)
+            const liquidationCollateral = feePerBlock * ltp;
+
+            // Days equivalent of LTP
+            const ltpDays = ltp / blocksPerDay;
+
+            // Update LTP days display
+            document.getElementById('ltpDaysDisplay').textContent = ltpDays.toFixed(2);
+
+            // Fees for requested runway period
+            const feesForPeriod = dailyBurnRate * runwayPeriod;
+
+            // Total ETH required
+            const totalETHRequired = feesForPeriod + liquidationCollateral;
+
+            // Liquidation safety buffer in days (how many days the collateral alone protects you)
+            const liquidationSafetyDays = dailyBurnRate > 0 ? Math.floor(liquidationCollateral / dailyBurnRate) : Infinity;
+
+            // Update results
+            document.getElementById('annualOperatorFees').textContent = totalOperatorFeesPerYear.toFixed(6);
+            document.getElementById('annualNetworkFees').textContent = totalNetworkFeesPerYear.toFixed(6);
+            document.getElementById('dailyBurnRate').textContent = dailyBurnRate.toFixed(8);
+            document.getElementById('currentRunway').textContent = liquidationSafetyDays === Infinity ? '∞' : Math.floor(liquidationSafetyDays);
+
+            document.getElementById('operatorFeesForPeriod').textContent = (totalOperatorFeesPerYear / 365 * runwayPeriod).toFixed(6) + ' ETH';
+            document.getElementById('networkFeesForPeriod').textContent = (totalNetworkFeesPerYear / 365 * runwayPeriod).toFixed(6) + ' ETH';
+            document.getElementById('collateralRequired').textContent = liquidationCollateral.toFixed(6) + ' ETH';
+            document.getElementById('totalETHRequired').textContent = totalETHRequired.toFixed(6) + ' ETH';
+
+            document.getElementById('postMigrationBalance').textContent = totalETHRequired.toFixed(6) + ' ETH';
+            document.getElementById('postMigrationEB').textContent = effectiveBalance.toFixed(2) + ' ETH';
+            document.getElementById('postMigrationRunway').textContent = Math.floor(runwayPeriod) + ' days';
+
+            // Operator breakdown
+            updateOperatorBreakdown(validatorCount);
+
+            // Runway breakdown
+            updateRunwayBreakdown(totalAnnualFees, runwayPeriod, liquidationCollateral, ltpDays, feePerBlock, ltp);
+
+            // Checklist
+            updateChecklist(totalETHRequired, effectiveBalance, validatorCount);
+
+            // Important notes
+            updateImportantNotes(totalETHRequired);
+
+            // Status check
+            updateStatus(totalETHRequired, validatorCount);
+        }
+
+        function updateOperatorBreakdown(validatorCount) {
+            const breakdown = document.getElementById('operatorBreakdown');
+            breakdown.innerHTML = '';
+
+            operatorFees.forEach((fee, idx) => {
+                const totalFee = fee * validatorCount;
+                const item = document.createElement('div');
+                item.className = 'breakdown-item';
+                item.innerHTML = `
+                    <span class="breakdown-label">Operator ${idx + 1}</span>
+                    <span class="breakdown-value">${totalFee.toFixed(6)} ETH/year (${fee.toFixed(6)} × ${validatorCount})</span>
+                `;
+                breakdown.appendChild(item);
+            });
+        }
+
+        function updateRunwayBreakdown(totalAnnualFees, runwayPeriod, liquidationCollateral, ltpDays, feePerBlock, ltp) {
+            const breakdown = document.getElementById('runwayBreakdown');
+            breakdown.innerHTML = `
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Annual Burn Rate</span>
+                    <span class="breakdown-value">${totalAnnualFees.toFixed(6)} ETH</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Daily Burn Rate</span>
+                    <span class="breakdown-value">${(totalAnnualFees / 365).toFixed(8)} ETH</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Fee Per Block</span>
+                    <span class="breakdown-value">${feePerBlock.toFixed(10)} ETH</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Liquidation Threshold Period (LTP)</span>
+                    <span class="breakdown-value">${ltp} blocks (~${ltpDays.toFixed(2)} days)</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Liquidation Collateral (LTP × Fee/Block)</span>
+                    <span class="breakdown-value">${liquidationCollateral.toFixed(6)} ETH</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Runway Period</span>
+                    <span class="breakdown-value">${runwayPeriod} days</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Fees for Period</span>
+                    <span class="breakdown-value">${((totalAnnualFees / 365) * runwayPeriod).toFixed(6)} ETH</span>
+                </div>
+            `;
+        }
+
+        function updateChecklist(totalETH, eb, validators) {
+            const checklist = document.getElementById('checklist');
+            const checks = [
+                `✓ Have ${totalETH.toFixed(6)} ETH ready for deposit`,
+                `✓ Confirm ${validators} validator(s) with ${eb.toFixed(2)} ETH effective balance`,
+                `✓ Review operator fees before migration`,
+                `✓ Ensure you have sufficient ETH for the desired runway period`,
+                `✓ Understand migration is one-way and irreversible`,
+                `✓ Test migration on testnet first (if available)`
+            ];
+
+            checklist.innerHTML = checks.map(check => `
+                <div class="breakdown-item">
+                    <span class="breakdown-label">${check}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateImportantNotes(totalETH) {
+            const notes = document.getElementById('importantNotes');
+            notes.innerHTML = `
+                <div class="breakdown-item">
+                    <span class="breakdown-label">🎯 EB Accounting</span>
+                    <span class="breakdown-value" style="color: #86efac;">Fees scale with actual effective balance</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">⚡ ETH Benefits</span>
+                    <span class="breakdown-value" style="color: #93c5fd;">More capital-efficient liquidation (~7 days)</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">🔄 Irreversible</span>
+                    <span class="breakdown-value" style="color: #fbbf24;">Migration cannot be reversed after completion</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">💡 Oracle Updates</span>
+                    <span class="breakdown-value" style="color: #f87171;">Balance updates may increase fees when oracles sync</span>
+                </div>
+            `;
+        }
+
+        function updateStatus(totalETH, validators) {
+            const warning = document.getElementById('warningBox');
+            const success = document.getElementById('successBox');
+
+            warning.classList.remove('show');
+            success.classList.remove('show');
+
+            if (totalETH < 0.001) {
+                warning.textContent = '⚠️ ETH requirement is very low. Verify operator fees and validator count.';
+                warning.classList.add('show');
+            } else if (totalETH > 10) {
+                warning.textContent = '⚠️ High ETH requirement detected. Review operator fees and extended runway period.';
+                warning.classList.add('show');
+            } else {
+                success.textContent = `✓ Migration estimation complete. You need ${totalETH.toFixed(6)} ETH for ${validators} validator(s).`;
+                success.classList.add('show');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function resetForm() {
+            validatorCountInput.value = '1';
+            effectiveBalanceInput.value = '32';
+            operatorCountSelect.value = '4';
+            runwayPeriodSelect.value = '30';
+            customRunwayInput.value = '30';
+            networkFeeInput.value = '0.00928';
+            ethAPRInput.value = '2.9';
+            blocksPerDayInput.value = '7200';
+            ltpInput.value = '50400';
+            generateOperatorInputs();
+            calculateMigration();
+        }
+
+        function exportResults() {
+            const data = {
+                validatorCount: validatorCountInput.value,
+                effectiveBalance: effectiveBalanceInput.value,
+                operatorCount: operatorCountSelect.value,
+                runwayPeriod: runwayPeriodSelect.value === 'custom' ? customRunwayInput.value : runwayPeriodSelect.value,
+                networkFeePerValidator: networkFeeInput.value,
+                minCollateral: minCollateralInput.value,
+                totalETHRequired: document.getElementById('totalETHRequired').textContent,
+                annualOperatorFees: document.getElementById('annualOperatorFees').textContent,
+                annualNetworkFees: document.getElementById('annualNetworkFees').textContent,
+                dailyBurnRate: document.getElementById('dailyBurnRate').textContent,
+                timestamp: new Date().toISOString()
+            };
+
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ssv-migration-estimate-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        init();
+    </script>
+</body>
+</html>
