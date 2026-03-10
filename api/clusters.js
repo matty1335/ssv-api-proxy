@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { owner } = req.query;
+        const { owner, network } = req.query;
 
         if (!owner) {
             return res.status(400).json({ error: 'Missing owner parameter' });
@@ -20,8 +20,9 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid address format' });
         }
 
-        // Try the SSV API
-        const ssvApiUrl = `https://api.ssv.network/api/v4/clusters?owner=${owner.toLowerCase()}`;
+        const net = network || 'mainnet';
+        const ssvApiUrl = `https://api.ssv.network/api/v4/${net}/accounts/${owner.toLowerCase()}/totalEffectiveBalance`;
+        
         console.log('Fetching from:', ssvApiUrl);
         
         const response = await fetch(ssvApiUrl, {
@@ -32,14 +33,10 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        console.log('SSV API Response:', data);
+        console.log('Response:', data);
 
         if (!response.ok) {
-            return res.status(response.status).json({ 
-                error: 'SSV API error',
-                details: data,
-                url: ssvApiUrl
-            });
+            return res.status(response.status).json(data);
         }
 
         return res.status(200).json(data);
@@ -47,7 +44,7 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error('Error:', error);
         return res.status(500).json({ 
-            error: 'Failed to fetch clusters',
+            error: 'Failed to fetch',
             details: error.message
         });
     }
