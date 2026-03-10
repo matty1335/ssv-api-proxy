@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { owner, network } = req.query;
+        const { owner, network, type } = req.query;
 
         if (!owner) {
             return res.status(400).json({ error: 'Missing owner parameter' });
@@ -21,7 +21,16 @@ export default async function handler(req, res) {
         }
 
         const net = network || 'mainnet';
-        const ssvApiUrl = `https://api.ssv.network/api/v4/${net}/accounts/${owner.toLowerCase()}/totalEffectiveBalance`;
+        let ssvApiUrl;
+
+        // Route based on type parameter
+        if (type === 'balance') {
+            // Get total effective balance
+            ssvApiUrl = `https://api.ssv.network/api/v4/${net}/accounts/${owner.toLowerCase()}/totalEffectiveBalance`;
+        } else {
+            // Get clusters (default)
+            ssvApiUrl = `https://api.ssv.network/api/v4/${net}/clusters?owner=${owner.toLowerCase()}`;
+        }
         
         console.log('Fetching from:', ssvApiUrl);
         
