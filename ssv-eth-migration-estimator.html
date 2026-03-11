@@ -901,22 +901,35 @@
                                 'Content-Type': 'application/json',
                             }
                         });
+if (response.ok) {
+    const data = await response.json();
 
-                        if (response.ok) {
-                            const data = await response.json();
-                            const clusters = data.clusters || data.data || [];
+    let clusters = [];
 
-                            if (clusters.length > 0) {
-                                successCount++;
-                                totalClusters += clusters.length;
-                                clustersFetched = true;
-                                
-                                clusters.forEach(cluster => {
-                                    cluster.ownerAddress = address;
-                                    allFetchedClusters.push(cluster);
-                                });
-                            }
-                        }
+    // Handle different SSV API response formats
+    if (Array.isArray(data)) {
+        clusters = data;
+    } else if (Array.isArray(data.clusters)) {
+        clusters = data.clusters;
+    } else if (Array.isArray(data.data)) {
+        clusters = data.data;
+    } else if (Array.isArray(data.data?.clusters)) {
+        clusters = data.data.clusters;
+} else if (data.clusters && Array.isArray(data.clusters.clusters)) {
+            clusters = data.clusters.clusters;
+    }
+
+    if (clusters.length > 0) {
+        successCount++;
+        totalClusters += clusters.length;
+        clustersFetched = true;
+
+        clusters.forEach(cluster => {
+            cluster.ownerAddress = address;
+            allFetchedClusters.push(cluster);
+        });
+    }
+}
                     } catch (error) {
                         console.log(`Failed to fetch for ${address}: ${error.message}`);
                     }

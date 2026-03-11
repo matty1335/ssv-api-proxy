@@ -13,18 +13,29 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { owner, network } = req.query;
+        const { owner, network, clusterHash } = req.query;
+        const net = network || 'mainnet';
 
+        // If clusterHash is provided, get effective balance for that specific cluster
+        if (clusterHash) {
+            const balanceUrl = `https://api.ssv.network/api/v4/${net}/clusters/${clusterHash}/totalEffectiveBalance`;
+            const response = await fetch(balanceUrl, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            return res.status(response.status).json(data);
+        }
+
+        // Otherwise, get clusters for owner
         if (!owner) {
-            return res.status(400).json({ error: 'Missing owner parameter' });
+            return res.status(400).json({ error: 'Missing owner or clusterHash parameter' });
         }
 
         if (!/^0x[a-fA-F0-9]{40}$/.test(owner)) {
             return res.status(400).json({ error: 'Invalid address format' });
         }
 
-        const net = network || 'mainnet';
-        
         // Fetch clusters
         const clustersUrl = `https://api.ssv.network/api/v4/${net}/clusters/owner/${owner.toLowerCase()}`;
         const clustersResponse = await fetch(clustersUrl, {
@@ -32,6 +43,33 @@ export default async function handler(req, res) {
             headers: { 'Content-Type': 'application/json' }
         });
         const clustersData = await clustersResponse.json();
+
+        // Fetch effective balance for each cluster
+        if (clustersData.clusters && clustersData.clusters.clusters) {
+            const clustersWithBalance = await Promise.all(
+                clustersData.clusters.clusters.map(async (cluster) => {
+                    try {
+                        const balanceUrl = `https://api.ssv.network/api/v4/${net}/clusters/${cluster.id}/totalEffectiveBalance`;
+                        const balanceResponse = await fetch(balanceUrl, {
+                            method: 'GET',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const balanceData = await balanceResponse.json();
+                        return {
+                            ...cluster,
+                            effectiveBalance: balanceData.effectiveBalance || '0'
+                        };
+                    } catch (err) {
+                        console.error('Error fetching balance for cluster', cluster.id, err);
+                        return {
+                            ...cluster,
+                            effectiveBalance: '0'
+                        };
+                    }
+                })
+            );
+            clustersData.clusters.clusters = clustersWithBalance;
+        }
 
         // Fetch total effective balance
         const balanceUrl = `https://api.ssv.network/api/v4/${net}/accounts/${owner.toLowerCase()}/totalEffectiveBalance`;
